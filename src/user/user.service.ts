@@ -12,8 +12,10 @@ export class UserService {
     private userRepository: Repository<UserEntity>,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
-    return this.userRepository.save(createUserDto);
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.userRepository.create(createUserDto);
+    delete user.password;
+    return user;
   }
 
   findAll(): Promise<UserEntity[]> {
@@ -31,11 +33,17 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<any> {
-    await this.userRepository.update(id, updateUserDto);
-    const updatedUser = await this.userRepository.findOneBy({ id });
+    const user = await this.userRepository.findOneBy({ id });
+    const updatedUser = {
+      ...user,
+      ...updateUserDto,
+    };
+
     if (!updatedUser) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+    await this.userRepository.update(id, updateUserDto);
+
     return updatedUser;
   }
 
